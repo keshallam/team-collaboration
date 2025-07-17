@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Verifikasi Dokumen</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tangerine&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .kolectra-title {
+      font-family: 'Tangerine', cursive;
+      font-size: 70px;
+      text-shadow: 2px 2px 3px #aaa;
+    }
+
+    @keyframes fade-in-up {
+      0% { opacity: 0; transform: translateY(30px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade {
+      animation: fade-in-up 0.8s ease-out;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 pt-[180px] px-6 md:px-12">
+
+  <!-- Header -->
+  <header class="fixed top-0 left-0 right-0 bg-[#557777] text-white py-5 px-6 shadow-md z-50">
+    <div class="flex items-center justify-between">
+      <a href="{% url 'after_login' %}" class="flex items-center text-sm hover:text-gray-300 transition group">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 group-hover:-translate-x-1 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        <span>Beranda</span>
+      </a>
+      <div class="text-center flex-1 -ml-6">
+        <h1 class="kolectra-title leading-none">
+          <span class="text-[72px]">K</span><span class="text-[56px]">olectra</span>
+        </h1>
+        <p class="text-sm text-white/90 -mt-1">Koperasi Electronic Archive</p>
+      </div>
+      <div class="w-[80px]"></div>
+    </div>
+  </header>
+
+  <!-- Konten -->
+  <main class="animate-fade">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="text-3xl text-[#3f718f]">📑</div>
+      <h2 class="text-2xl md:text-3xl font-semibold text-gray-800 tracking-tight">Verifikasi Dokumen</h2>
+    </div>
+
+    <form method="post" action="{% url 'verifikasi_dokumen' %}" id="verifikasiForm">
+      {% csrf_token %}
+
+      <div class="overflow-x-auto rounded-xl shadow-lg border border-gray-200">
+        <table class="min-w-full text-sm text-gray-700 bg-white">
+          <thead class="bg-[#3f718f] text-white text-xs uppercase tracking-wide">
+            <tr>
+              <th class="px-6 py-4 text-left">ID Arsip</th>
+              <th class="px-6 py-4 text-left">No. Berkas</th>
+              <th class="px-6 py-4 text-left">Nama File</th>
+              <th class="px-6 py-4 text-left">Unit</th>
+              <th class="px-6 py-4 text-left">Tahun</th>
+              <th class="px-6 py-4 text-left">Jenis</th>
+              <th class="px-6 py-4 text-left">Tanggal Upload</th>
+              <th class="px-6 py-4 text-center">✔</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for dok in dokumen_list %}
+            <tr class="hover:bg-sky-50 transition duration-200">
+              <td class="px-6 py-4 font-medium text-gray-800">{{ dok.arsip_id }}</td>
+              <td class="px-6 py-4 text-gray-600">{{ dok.nomor_berkas }}</td>
+              <td class="px-6 py-4">{{ dok.nama_file }}</td>
+              <td class="px-6 py-4">{{ dok.unit }}</td>
+              <td class="px-6 py-4">{{ dok.tahun }}</td>
+              <td class="px-6 py-4">{{ dok.get_jenis_display }}</td>
+              <td class="px-6 py-4">{{ dok.created_at|date:"d M Y H:i" }}</td>
+              <td class="px-6 py-4 text-center">
+                <input type="checkbox" name="dokumen_ids" value="{{ dok.arsip_id }}" class="accent-green-600 w-5 h-5">
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" class="text-center py-8 text-gray-400 italic">Tidak ada dokumen yang menunggu verifikasi.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <p id="warning-msg" class="text-red-500 text-sm mt-4 hidden">
+        Maksimal hanya bisa verifikasi 5 dokumen sekaligus.
+      </p>
+
+      <div class="mt-6 text-right">
+        <button id="submit-verifikasi" type="submit"
+          class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md text-sm font-semibold shadow hidden transition-all duration-200">
+          💾 Simpan Verifikasi
+        </button>
+      </div>
+    </form>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const maxChecked = 5;
+      const checkboxes = document.querySelectorAll('input[name="dokumen_ids"]');
+      const submitButton = document.getElementById('submit-verifikasi');
+      const warningMsg = document.getElementById('warning-msg');
+
+      function updateState() {
+        const checkedCount = document.querySelectorAll('input[name="dokumen_ids"]:checked').length;
+        submitButton.classList.toggle('hidden', checkedCount === 0);
+        warningMsg.classList.toggle('hidden', checkedCount < maxChecked);
+
+        checkboxes.forEach(cb => {
+          cb.disabled = !cb.checked && checkedCount >= maxChecked;
+        });
+      }
+
+      checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateState);
+      });
+
+      updateState(); // initial check
+    });
+  </script>
+
+</body>
+</html>

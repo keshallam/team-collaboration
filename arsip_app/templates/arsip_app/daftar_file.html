@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Daftar Dokumen Arsip</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tangerine&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+    .kolectra-title {
+      font-family: 'Tangerine', cursive;
+      font-size: 70px;
+      text-shadow: 2px 2px 3px #aaa;
+      margin: 0;
+    }
+    .kolectra-title .big-k {
+      font-size: 53px;
+    }
+    .subtitle {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 20px;
+      color: #666;
+    }
+    @keyframes fade-in-up {
+      0% { opacity: 0; transform: translateY(30px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade {
+      animation: fade-in-up 0.8s ease-out;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 pt-[180px] px-8">
+
+<!-- Header Full Width with Beranda Button -->
+<div class="fixed top-0 left-0 right-0 bg-[#557777] text-white py-5 px-6 z-50">
+  <div class="flex items-center justify-between">
+    <!-- Tombol Beranda -->
+    <a href="{% url 'after_login' %}" class="inline-flex items-center text-sm text-white hover:text-gray-300 transition group">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 group-hover:-translate-x-1 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
+      <span class="tracking-tight">Beranda</span>
+    </a>
+
+    <!-- Judul Kolectra -->
+    <div class="text-center flex-1 -ml-6">
+      <h1 class="font-['Tangerine'] text-[72px] leading-none tracking-wide" style="text-shadow: 2px 2px 3px #ccc;">
+        <span class="text-[72px]">K</span><span class="text-[56px]">olectra</span>
+      </h1>
+      <p class="text-sm text-white/90 -mt-1">Koperasi Electronic Archive</p>
+    </div>
+
+    <!-- Spacer untuk balance -->
+    <div class="w-[80px]"></div>
+  </div>
+</div>
+
+
+<!-- Judul Halaman -->
+<div class="flex items-center gap-3 mb-6">
+  <div class="text-xl text-[#3f718f]">📄</div>
+  <h2 class="text-xl font-semibold text-gray-800 tracking-tight">Daftar Dokumen Arsip</h2>
+</div>
+
+<!-- Filter + Tombol Upload -->
+<div class="bg-white p-6 rounded-xl shadow-sm mb-8 w-full flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+  
+  <!-- Filter Form -->
+  <form method="get" class="flex flex-wrap gap-4 items-center">
+    <div>
+        <label class="text-sm text-gray-600">Unit:</label>
+        <select name="unit" class="border border-gray-300 rounded-md px-3 py-2 text-sm">
+            <option value="">Semua</option>
+            {% for u in daftar_unit %}
+                <option value="{{ u }}" {% if unit_dipilih == u %}selected{% endif %}>{{ u }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label class="text-sm text-gray-600">Tahun:</label>
+        <select name="tahun" class="border border-gray-300 rounded-md px-3 py-2 text-sm">
+            <option value="">Semua</option>
+            {% for t in daftar_tahun %}
+                <option value="{{ t }}" {% if tahun_dipilih == t %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label class="text-sm text-gray-600">Bulan:</label>
+        <select name="bulan" class="border border-gray-300 rounded-md px-3 py-2 text-sm">
+            <option value="">Semua</option>
+            {% for b in daftar_bulan %}
+                <option value="{{ b }}" {% if bulan_dipilih == b %}selected{% endif %}>{{ b }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label class="text-sm text-gray-600">Cari Arsip:</label>
+        <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Pencarian data arsip..." class="border border-gray-300 rounded-md px-3 py-2 text-sm w-[180px]" />
+    </div>
+    <div>
+        <button type="submit" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-md text-sm flex items-center gap-2 transition duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-4-4m0 0A7.5 7.5 0 103.6 3.6a7.5 7.5 0 0012.95 12.95z" />
+            </svg>
+            <span>Search</span>
+        </button>
+    </div>
+  </form>
+
+  <!-- Tombol Upload Dokumen -->
+  {% if user.level != 'viewer' %}
+    <div class="w-full md:w-auto">
+      <a href="{% url 'tambah_file' %}" class="inline-flex items-center gap-2 bg-green-200 hover:bg-green-300 text-green-900 px-5 py-2 rounded-lg font-medium transition w-full md:w-auto justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-green-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        <span>Upload Dokumen</span>
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+
+<!-- Tabel Dokumen -->
+<div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+    <table class="min-w-full text-sm text-gray-700">
+        <thead style="background-color: #3f718f;" class="text-white uppercase text-sm">
+            <tr class="text-left">
+                <th class="px-4 py-3">Id. Arsip</th>
+                <th class="px-4 py-3">No. Berkas</th>
+                <th class="px-4 py-3">Unit</th>
+                <th class="px-4 py-3">Tahun</th>
+                <th class="px-4 py-3">Bulan</th>
+                <th class="px-4 py-3">Jenis</th>
+                <th class="px-6 py-3">Tanggal Upload</th>
+                <th class="px-4 py-3">Diunggah Oleh</th>
+                <th class="px-4 py-3">Status</th>
+                <th class="px-4 py-3">Scan</th>
+                <th class="px-4 py-3">File</th>
+                <th class="px-4 py-3">Aksi</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for dokumen in dokumen_list %}
+            <tr class="hover:bg-gray-50 transition border-t">
+                <td class="px-4 py-3">{{ dokumen.arsip_id }}</td>
+                <td class="px-4 py-3">{{ dokumen.nomor_berkas }}</td>
+                <td class="px-4 py-3">{{ dokumen.unit }}</td>
+                <td class="px-4 py-3">{{ dokumen.tahun }}</td>
+                <td class="px-4 py-3">{{ dokumen.bulan }}</td>
+                <td class="px-4 py-3">{{ dokumen.get_jenis_display }}</td>
+                <td class="px-6 py-3">{{ dokumen.created_at|date:"d M Y H:i" }}</td>
+                <td class="px-4 py-3">{{ dokumen.diunggah_oleh.username }}</td>
+
+                <!-- Tombol kolom status di sini -->
+                <td class="px-4 py-3">
+                    {% if dokumen.status == 'terverifikasi' %}
+                    <span class="text-green-600 font-medium">✔ Terverifikasi</span>
+                    {% else %}
+                    <span class="text-yellow-600 italic">Belum Verifikasi</span>
+                    {% endif %}
+                </td>
+
+                <td class="px-4 py-3">
+                    {% if dokumen.file_scan %}
+                    <a href="{{ dokumen.file_scan.url }}" target="_blank" class="text-blue-600 hover:underline">Lihat</a>
+                    {% else %}
+                    <span class="text-gray-400">-</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    {% if dokumen.file_upload %}
+                    <a href="{{ dokumen.file_upload.url }}" target="_blank" class="text-green-600 hover:underline">Unduh</a>
+                    {% else %}
+                    <span class="text-gray-400">-</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    {% if user.level == 'admin' %}
+                    <div class="flex flex-col gap-1">
+                        <a href="{% url 'edit_file' dokumen.arsip_id %}" class="bg-yellow-200 hover:bg-yellow-300 text-yellow-900 px-3 py-1 rounded-md text-xs font-medium text-center">✏ Edit</a>
+                        <a href="{% url 'hapus_file' dokumen.arsip_id %}" class="bg-red-200 hover:bg-red-300 text-red-900 px-3 py-1 rounded-md text-xs font-medium text-center">🗑 Hapus</a>
+                    </div>
+                    {% else %}
+                    <span class="text-gray-400 italic">Lihat saja</span>
+                    {% endif %}
+                </td>
+            </tr>
+
+            {% empty %}
+            <tr>
+                <td colspan="10" class="text-center py-6 text-gray-400 italic">Belum ada dokumen ditemukan.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

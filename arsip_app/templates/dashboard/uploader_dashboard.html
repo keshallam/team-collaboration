@@ -1,0 +1,101 @@
+<!-- arsip_app/templates/dashboard/uploader_dashboard.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Uploader</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #d0eefd, #f0faff);
+      padding: 50px;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #ffffff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.07);
+    }
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+    p {
+      text-align: center;
+      color: #555;
+      font-size: 16px;
+      margin-bottom: 30px;
+    }
+    .unit-info {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 15px;
+      color: #333;
+    }
+    .button-group {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .btn {
+      padding: 12px 20px;
+      background-color: #2196f3;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 600;
+      transition: background 0.3s ease;
+    }
+    .btn:hover {
+      background-color: #1976d2;
+    }
+  </style>
+</head>
+<body>
+  <!-- SweetAlert Confirm Dialog -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      Swal.fire({
+        title: 'Selamat Datang di sistem arsip digital, {{ user.username }}!',
+        text: "Anda login sebagai {{ user.level|title }}. Silakan upload atau cek dokumen unit Anda.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, lanjut!',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          Swal.fire({
+            title: 'Selamat datang!',
+            text: 'Anda bisa melihat dan menata dokumen fisik berdasarkan arsip.',
+            icon: 'success'
+          });
+        }
+      });
+    });
+  </script>
+  <div class="container">
+    <h2>Halo, {{ user.username }} 👋</h2>
+    <p>Anda login sebagai <strong>Uploader</strong>. Silakan unggah atau cek dokumen dari unit Anda.</p>
+    <div class="unit-info">Unit Kerja: <strong>{{ user.unit_kerja }}</strong></div>
+
+    <div class="button-group">
+      <a href="{% url 'daftar_file' %}" class="btn">📄 Lihat Dokumen</a>
+      <a href="{% url 'tambah_file' %}" class="btn">📤 Upload Dokumen</a>
+      <a href="{% url 'upload_scan_otomatis' %}" class="btn">📠 Scan Otomatis</a>
+
+      <!-- Tombol Logout sebagai Form POST -->
+      <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="w-full text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md">🚪 Logout</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

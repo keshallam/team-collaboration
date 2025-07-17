@@ -1,0 +1,339 @@
+{% load custom_filters %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Admin - Statistik Arsip</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tangerine&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    .kolectra-title {
+      font-family: 'Tangerine', cursive;
+      font-size: 70px;
+      text-shadow: 2px 2px 3px #aaa;
+      margin: 0;
+    }
+    .kolectra-title .big-k {
+      font-size: 53px;
+    }
+    .subtitle {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 20px;
+      color: #666;
+    }
+    @keyframes fade-in-up {
+      0% { opacity: 0; transform: translateY(30px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade {
+      animation: fade-in-up 0.8s ease-out;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex">
+
+<!-- Sidebar -->
+<aside class="w-64 bg-white p-6 shadow-lg rounded-r-2xl flex flex-col items-center">
+  <div class="text-center mt-2 mb-4">
+    <h1 class="kolectra-title">K<span class="big-k">olectra</span></h1>
+    <p class="subtitle text-sm text-gray-600 -mt-2">Koperasi Electronic Archive</p>
+  </div>
+
+  <p class="text-sm text-gray-600 mb-6">Halo, <strong>{{ user.username }}</strong></p>
+
+  <nav class="flex flex-col gap-3 w-full">
+    <a href="{% url 'daftar_file' %}" class="flex items-center gap-2 text-gray-800 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg shadow-sm ring-1 ring-gray-300 transition">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h10M4 18h6" />
+      </svg>
+      <span>All Documents</span>
+    </a>
+    <a href="{% url 'tambah_file' %}" class="flex items-center gap-2 text-gray-800 bg-green-100 hover:bg-green-200 px-4 py-2 rounded-lg shadow-sm ring-1 ring-green-300 transition">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      <span>Upload Document</span>
+    </a>
+
+    {% if user.level == 'admin' %}
+      <a href="{% url 'daftar_verifikasi' %}" class="flex items-center gap-2 text-gray-800 bg-yellow-100 hover:bg-yellow-200 px-4 py-2 rounded-lg shadow-sm ring-1 ring-yellow-300 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Verifikasi Dokumen</span>
+      </a>
+    {% endif %}
+
+    <form action="{% url 'logout' %}" method="post">
+      {% csrf_token %}
+      <button type="submit" class="w-full flex items-center gap-2 text-gray-800 bg-red-100 hover:bg-red-200 px-4 py-2 rounded-lg shadow-sm ring-1 ring-red-300 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1m0-10V5m0 6a2 2 0 100-4 2 2 0 000 4z" />
+        </svg>
+        <span>Logout</span>
+      </button>
+    </form>
+  </nav>
+</aside>
+
+<!-- Main Content -->
+<main class="flex-1 p-10 animate-fade">
+  <!-- Header -->
+  <div class="flex items-center gap-4 mb-6">
+    <img src="{% static 'img/logo-koperasi.png' %}" alt="Logo Koperasi" class="w-12 h-12">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-800 font-[Poppins] leading-snug">Statistik Arsip Dokumen</h2>
+      <p class="text-sm text-gray-500 font-[Poppins]">Berikut adalah daftar dokumen yang telah diunggah oleh setiap unit kerja.</p>
+    </div>
+  </div>
+
+    <!-- Pencarian Dokumen -->
+    <form method="get" class="flex flex-wrap gap-4 items-center mb-6">
+
+      <!-- Dropdown Unit -->
+      <select name="unit" class="px-3 py-2 border rounded-md text-sm">
+        <option value="">Semua Unit</option>
+        {% for unit in daftar_unit %}
+          <option value="{{ unit }}" {% if unit == unit_dipilih %}selected{% endif %}>{{ unit }}</option>
+        {% endfor %}
+      </select>
+
+      <!-- Dropdown Tahun -->
+      <select name="tahun" class="px-3 py-2 border rounded-md text-sm">
+        <option value="">Semua Tahun</option>
+        {% for t in daftar_tahun %}
+          <option value="{{ t }}" {% if t == tahun_dipilih|add:""|stringformat:"s" %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+
+      <!-- Dropdown Bulan -->
+      <select name="bulan" class="px-3 py-2 border rounded-md text-sm">
+        <option value="">Semua Bulan</option>
+        {% for b in daftar_bulan %}
+          <option value="{{ b }}" {% if b == bulan_dipilih %}selected{% endif %}>{{ b }}</option>
+        {% endfor %}
+      </select>
+
+      <!-- Dropdown Jenis -->
+      <select name="jenis" class="px-3 py-2 border rounded-md text-sm">
+        <option value="">Semua Jenis</option>
+        {% for jenis in daftar_jenis %}
+          <option value="{{ jenis }}" {% if jenis == jenis_dipilih %}selected{% endif %}>{{ jenis|get_display_jenis }}</option>
+        {% endfor %}
+      </select>
+
+      <!-- 🔍 Input Pencarian Manual (diletakkan setelah 'jenis') -->
+      <input
+        type="text"
+        name="q"
+        placeholder="Telusuri Arsip Dokumen..."
+        value="{{ request.GET.q }}"
+        class="px-10 py-2 border rounded-md text-sm shadow-sm"
+      >
+
+      <!-- Tombol Search -->
+      <button type="submit" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-md text-sm flex items-center gap-2 transition duration-200">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M21 21l-4-4m0 0A7.5 7.5 0 103.6 3.6a7.5 7.5 0 0012.95 12.95z" />
+        </svg>
+        <span>Search</span>
+      </button>
+    </form>
+
+
+    <!-- Tabel Dokumen -->
+    <div class="p-6 bg-white rounded-2xl shadow-md mb-8">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Daftar Dokumen</h2>
+      <div class="overflow-x-auto rounded-xl shadow-md ring-1 ring-gray-200">
+      <table class="min-w-full text-sm text-left text-gray-700 rounded-xl overflow-hidden">
+        <thead style="background-color: #3f718f;" class="text-white uppercase">
+          <tr>
+            <th class="px-4 py-3">Id Arsip</th>
+            <th class="px-4 py-2">No. Berkas</th>
+            <th class="px-4 py-3">Unit</th>
+            <th class="px-4 py-3">Tahun</th>
+            <th class="px-4 py-3">Bulan</th>
+            <th class="px-4 py-3">Jenis</th>
+            <th class="px-6 py-3">Tanggal Upload</th>
+            <th class="px-4 py-3">Diunggah Oleh</th>
+            <th class="px-4 py-3">Scan</th>
+            <th class="px-4 py-3">File</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white">
+          {% for dokumen in dokumen_list %}
+          <tr class="hover:bg-gray-50 transition duration-200">
+            <td class="px-4 py-3">{{ dokumen.arsip_id }}</td>
+            <td class="px-4 py-2">{{ dokumen.nomor_berkas }}</td>
+            <td class="px-4 py-2">{{ dokumen.unit }}</td>
+            <td class="px-4 py-2">{{ dokumen.tahun }}</td>
+            <td class="px-4 py-2">{{ dokumen.bulan }}</td>
+            <td class="px-4 py-2">{{ dokumen.get_jenis_display }}</td>
+            <td class="px-6 py-3">{{ dokumen.created_at|date:"d M Y H:i" }}</td>
+            <td class="px-4 py-2">{{ dokumen.diunggah_oleh.username }}</td>
+            <td class="px-4 py-2 text-blue-600">
+              {% if dokumen.file_scan %}
+                <a href="{{ dokumen.file_scan.url }}" target="_blank">Lihat</a>
+              {% else %}
+                <span class="text-gray-400">-</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-2 text-green-600">
+              {% if dokumen.file_upload %}
+                <a href="{{ dokumen.file_upload.url }}" target="_blank">Unduh</a>
+              {% else %}
+                <span class="text-gray-400">-</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-gray-400 py-4">Belum ada dokumen.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    </div>
+
+    <!-- Statistik Ringkas per Unit -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+      {% for unit, jumlah in jumlah_per_unit.items %}
+      <div class="bg-white rounded-xl shadow p-4 hover:scale-[1.03] transition duration-300">
+        <p class="text-sm text-gray-500">Unit</p>
+        <h2 class="text-xl font-bold text-gray-800">{{ unit }}</h2>
+        <p class="text-lg text-blue-500">{{ jumlah }} dokumen</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Grafik Dokumen Per Bulan + Pie Persentase Jenis -->
+    <div class="bg-white rounded-xl shadow p-6 mb-10 animate-fade">
+      <h2 class="text-xl font-semibold mb-4">Statistik Dokumen</h2>
+      
+      <div class="flex flex-col md:flex-row gap-6 items-start">
+        
+        <!-- Grafik Dokumen Per Bulan (besar) -->
+        <div class="w-full md:w-2/3">
+          <h3 class="text-lg font-medium mb-2">Grafik Dokumen Per Bulan</h3>
+          <canvas id="dokumenPerBulan" class="h-80 md:h-[400px] w-full"></canvas>
+        </div>
+        
+        <!-- Grafik Pie Jenis Dokumen (kecil) -->
+        <div class="w-full md:w-1/3">
+          <h3 class="text-lg font-medium mb-2">Persentase Berdasarkan Jenis</h3>
+          <div class="w-full max-w-xs">
+            <canvas id="dokumenPerJenis" class="h-32 w-full"></canvas>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  <!-- Data untuk Grafik -->
+  <script id="bulan-labels" type="application/json">{{ bulan_labels|safe }}</script>
+  <script id="bulan-data" type="application/json">{{ bulan_data|safe }}</script>
+  <script id="jenis-labels" type="application/json">{{ jenis_labels|safe }}</script>
+  <script id="jenis-data" type="application/json">{{ jenis_data|safe }}</script>
+
+  <!-- Script ChartJS -->
+  <script>
+    const bulanLabels = JSON.parse(document.getElementById('bulan-labels').textContent);
+    const bulanData = JSON.parse(document.getElementById('bulan-data').textContent);
+    const jenisLabels = JSON.parse(document.getElementById('jenis-labels').textContent);
+    const jenisData = JSON.parse(document.getElementById('jenis-data').textContent);
+
+    new Chart(document.getElementById('dokumenPerBulan'), {
+      type: 'bar',
+      data: {
+        labels: bulanLabels,
+        datasets: [
+          {
+            label: 'Jumlah Dokumen (Bar)',
+            data: bulanData,
+            backgroundColor: '#fb923c',
+            borderRadius: 6,
+            yAxisID: 'y',
+          },
+          {
+            label: 'Tren Dokumen (Line)',
+            data: bulanData,
+            type: 'line',
+            borderColor: '#1d4ed8',  // biru tua
+            borderWidth: 2,
+            fill: false,
+            tension: 0.3,
+            yAxisID: 'y',
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Jumlah Dokumen'
+            }
+          }
+        }
+      }
+    });
+
+  new Chart(document.getElementById('dokumenPerJenis'), {
+    type: 'pie',
+    data: {
+      labels: jenisLabels.map(label => label.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())),
+      datasets: [{
+        data: jenisData,
+        backgroundColor: [
+          '#CAD2C5', '#84A98C', '#52796F', '#354F52', '#2F3E46',
+          '#A3B18A', '#D9ED92', '#F0EFEB', '#BFD8BD', '#C3D6C2',
+          '#9CAEA9', '#E9EDC9', '#CCD5AE', '#B5CDA3', '#B7B7A4',
+          '#D5BDAB', '#B4CFB0', '#A9C5A0'
+        ],
+        borderWidth: 1,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: '#4B5563',
+            font: { size: 12 }
+          }
+        }
+      }
+    }
+  });
+
+
+    // SweetAlert Welcome Message
+    Swal.fire({
+      title: 'Selamat datang!',
+      text: 'Kamu berhasil login sebagai Admin.',
+      imageUrl: 'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3anZnNWJrYnVrZ25idTYzYWU0cXpuaXF5Y3I0NjFyNTY2cmgwbWdzaiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/yyxyJh6db1mmZ8BsNl/giphy.gif',
+      imageWidth: 180,
+      imageHeight: 180,
+      imageAlt: 'Welcome Animation',
+      timer: 3000,
+      showConfirmButton: false
+    });
+  </script>
+</body>
+</html>
