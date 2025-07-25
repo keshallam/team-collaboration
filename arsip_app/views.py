@@ -8,6 +8,7 @@ from django.http import HttpResponse, HttpResponseForbidden, FileResponse, Http4
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Count, Q
 from django.utils import timezone
 from django.utils.text import capfirst
@@ -15,9 +16,6 @@ from django.utils.text import capfirst
 from .models import Dokumen
 from .forms import DokumenForm
 
-# ==========================
-# == DASHBOARD DAN LOGIN ==
-# ==========================
 @login_required
 def dashboard(request):
     match request.user.level:
@@ -31,6 +29,7 @@ def admin_dashboard(request):
     if request.user.level != 'admin':
         return HttpResponseForbidden("Kamu bukan admin!")
 
+    # === Ambil parameter filter dari request ===
     filters = {
         'unit': request.GET.get('unit'),
         'tahun': request.GET.get('tahun'),
@@ -44,6 +43,7 @@ def admin_dashboard(request):
         if value:
             dokumen_list = dokumen_list.filter(**{key: value})
 
+    # === Pencarian ===
     query = request.GET.get('q')
     if query:
         dokumen_list = dokumen_list.filter(
@@ -53,36 +53,105 @@ def admin_dashboard(request):
             Q(diunggah_oleh__username__icontains=query)
         )
 
-    tahun_sekarang = timezone.now().year
-    dokumen_per_bulan = dokumen_list.filter(tahun=tahun_sekarang).values('bulan').annotate(jumlah=Count('arsip_id'))
+    # === STATISTIK UTAMA ===
+    # 1. Total dokumen (SEMUA UNIT - tanpa filter)
+    total_dokumen_all = Dokumen.objects.count()
 
+    # 2. Total dokumen pada hasil filter/pencarian (sinkron dengan tabel/pagination)
+    total_dokumen = dokumen_list.count()
+
+    # 3. Total dokumen untuk unit user login (DOKUMEN PER UNIT)
+    user_unit = getattr(request.user, 'unit', None) or getattr(request.user, 'unit_kerja', None)
+    dokumen_unit = Dokumen.objects.filter(unit=user_unit).count() if user_unit else 0
+
+    # 4. Dokumen baru hari ini (di semua dokumen/filter)
+    today = timezone.localdate()
+    dokumen_baru = dokumen_list.filter(created_at__date=today).count()
+
+    # === Grafik tren dokumen baru per bulan di tahun berjalan ===
+    tahun_ini = timezone.now().year
     bulan_labels = [capfirst(calendar.month_name[i]) for i in range(1, 13)]
-    jumlah_per_bulan = {bulan: 0 for bulan in bulan_labels}
-    for entry in dokumen_per_bulan:
-        jumlah_per_bulan[entry['bulan']] = entry['jumlah']
+    data_baru = []
+    for i in range(1, 13):
+        jumlah = dokumen_list.filter(created_at__year=tahun_ini, created_at__month=i).count()
+        data_baru.append(jumlah)
+
+    # === Pie chart distribusi jenis dokumen ===
+    jenis_stat = dokumen_list.values('jenis').annotate(jumlah=Count('arsip_id'))
+    jenis_labels = [j['jenis'].replace('_', ' ').title() for j in jenis_stat]
+    jenis_data = [j['jumlah'] for j in jenis_stat]
+    donut_colors = ["#3b82f6", "#8b5cf6", "#10b981", "#fbbf24", "#fb7185", "#6366f1", "#f59e42", "#14b8a6"][:len(jenis_labels)]
+
+    # === Statistik Dokumen per Unit (untuk tabel mini bawah) ===
+    jumlah_per_unit = dokumen_list.values('unit').annotate(jumlah=Count('arsip_id'))
+
+    # === Semua data untuk filter dropdown ===
+    daftar_unit = Dokumen.objects.values_list('unit', flat=True).distinct()
+    daftar_tahun = Dokumen.objects.values_list('tahun', flat=True).distinct()
+    daftar_bulan = Dokumen.objects.values_list('bulan', flat=True).distinct()
+    daftar_jenis = Dokumen.objects.values_list('jenis', flat=True).distinct()
+    daftar_rak = Dokumen.objects.values_list('rak', flat=True).distinct()
+    daftar_kardus = Dokumen.objects.values_list('kardus', flat=True).distinct()
+    daftar_pengunggah = Dokumen.objects.exclude(diunggah_oleh=None)\
+        .values_list('diunggah_oleh__username', flat=True).distinct()
+
+    # === Aktivitas terbaru (opsional, dummy/manual) ===
+    aktivitas_terbaru = [
+        {"type": "new", "title": "Dokumen baru ditambahkan", "desc": "Laporan Tahunan 2023 telah diunggah oleh Admin • 2 jam yang lalu"},
+    ]
+
+    # === PAGINATION ===
+    page = request.GET.get('page', 1)
+    paginator = Paginator(dokumen_list.order_by('-created_at'), 10)
+    try:
+        dokumen_page = paginator.page(page)
+    except PageNotAnInteger:
+        dokumen_page = paginator.page(1)
+    except EmptyPage:
+        dokumen_page = paginator.page(paginator.num_pages)
+
+    doc_index_start = (dokumen_page.number - 1) * paginator.per_page + 1
 
     context = {
-        'jumlah_per_unit': dokumen_list.values('unit').annotate(jumlah=Count('arsip_id')),
-        'bulan_labels': json.dumps(bulan_labels),
-        'bulan_data': json.dumps([jumlah_per_bulan[bulan] for bulan in bulan_labels]),
-        'jumlah_per_bulan': jumlah_per_bulan,
-        'jenis_labels': json.dumps([j['jenis'].replace('_', ' ').title() for j in dokumen_list.values('jenis').annotate(jumlah=Count('arsip_id'))]),
-        'jenis_data': json.dumps([j['jumlah'] for j in dokumen_list.values('jenis').annotate(jumlah=Count('arsip_id'))]),
         'user': request.user,
-        'dokumen_list': dokumen_list.order_by('-created_at'),
+        'dokumen_page': dokumen_page,
+        'paginator': paginator,
+        'doc_index_start': doc_index_start,
 
-        'daftar_unit': Dokumen.objects.values_list('unit', flat=True).distinct(),
-        'daftar_tahun': Dokumen.objects.values_list('tahun', flat=True).distinct(),
-        'daftar_bulan': Dokumen.objects.values_list('bulan', flat=True).distinct(),
-        'daftar_jenis': Dokumen.objects.values_list('jenis', flat=True).distinct(),
-        'daftar_pengunggah': Dokumen.objects.exclude(diunggah_oleh=None).values_list('diunggah_oleh__username', flat=True).distinct(),
+        # Statistik
+        'total_dokumen': total_dokumen,            # Dokumen pada tabel aktif
+        'total_dokumen_all': total_dokumen_all,    # Semua dokumen (tanpa filter)
+        'dokumen_unit': dokumen_unit,
+        'dokumen_baru': dokumen_baru,
+        'jumlah_per_unit': jumlah_per_unit,
 
+        # Grafik
+        'bulan_labels': json.dumps(bulan_labels),
+        'data_baru': json.dumps(data_baru),
+        'donut_labels': json.dumps(jenis_labels),
+        'donut_data': json.dumps(jenis_data),
+        'donut_colors': json.dumps(donut_colors),
+
+        # Aktivitas terbaru
+        'aktivitas_terbaru': aktivitas_terbaru,
+
+        # Filter dropdown
+        'daftar_unit': daftar_unit,
+        'daftar_tahun': daftar_tahun,
+        'daftar_bulan': daftar_bulan,
+        'daftar_jenis': daftar_jenis,
+        'daftar_rak': daftar_rak,
+        'daftar_kardus': daftar_kardus,
+        'daftar_pengunggah': daftar_pengunggah,
+
+        # Filter aktif
         **{f'{key}_dipilih': value for key, value in filters.items()},
         'pengunggah_terpilih': request.GET.get('pengunggah'),
+        'query': query,
+        'request': request,  # biar bisa akses GET di template
     }
 
     return render(request, 'dashboard/admin_dashboard.html', context)
-
 
 @login_required
 def uploader_dashboard(request):
@@ -99,6 +168,7 @@ def after_login(request):
 # =============================
 # == DOKUMEN / ARSIP LOGIKA ==
 # =============================
+
 @login_required
 def daftar_file(request):
     dokumen_list = Dokumen.objects.filter(unit=request.user.unit_kerja)

@@ -73,10 +73,12 @@ class Dokumen(models.Model):
     jenis          = models.CharField("Jenis Dokumen", max_length=50, choices=JENIS_CHOICES)
     nomor_berkas   = models.CharField("Nomor Berkas", max_length=100, blank=True)
     nomor          = models.CharField("Nomor", max_length=50)
+    nomor_surat    = models.CharField(max_length=50, blank=True, null=True)
     tahun          = models.IntegerField("Tahun", choices=TAHUN_CHOICES)
     bulan          = models.CharField("Bulan", max_length=10, choices=BULAN_CHOICES)
     rak            = models.CharField("Rak", max_length=50)
     kardus         = models.CharField("Kardus", max_length=50)
+    
 
     # ==== File ====
     file_scan      = models.FileField("File Scan", upload_to='scan/', blank=True, null=True)

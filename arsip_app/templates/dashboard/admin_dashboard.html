@@ -1,330 +1,382 @@
-{% load custom_filters %}
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <title>Dashboard Admin - Statistik Arsip</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Tangerine&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <style>
-    .kolectra-title {
-      font-family: 'Tangerine', cursive;
-      font-size: 70px;
-      text-shadow: 2px 2px 3px #aaa;
-      margin: 0;
-    }
-    .kolectra-title .big-k {
-      font-size: 53px;
-    }
-    .subtitle {
-      font-family: 'Quicksand', sans-serif;
-      font-size: 20px;
-      color: #666;
-    }
-    @keyframes fade-in-up {
-      0% { opacity: 0; transform: translateY(30px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade {
-      animation: fade-in-up 0.8s ease-out;
-    }
-  </style>
-</head>
-<body class="bg-gray-100 min-h-screen flex">
+{% load custom_filters %}
+{% block title %}Dashboard Admin - Statistik Arsip{% endblock %}
 
-<!-- Sidebar -->
-<aside class="w-64 bg-white p-6 shadow-lg rounded-r-2xl flex flex-col items-center">
-  <div class="text-center mt-2 mb-4">
-    <h1 class="kolectra-title">K<span class="big-k">olectra</span></h1>
-    <p class="subtitle text-sm text-gray-600 -mt-2">Koperasi Electronic Archive</p>
-  </div>
-
-  <p class="text-sm text-gray-600 mb-6">Halo, <strong>{{ user.username }}</strong></p>
-
-  <nav class="flex flex-col gap-3 w-full">
-    <a href="{% url 'daftar_file' %}" class="flex items-center gap-2 text-gray-800 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg shadow-sm ring-1 ring-gray-300 transition">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h10M4 18h6" />
-      </svg>
-      <span>All Documents</span>
-    </a>
-    <a href="{% url 'tambah_file' %}" class="flex items-center gap-2 text-gray-800 bg-green-100 hover:bg-green-200 px-4 py-2 rounded-lg shadow-sm ring-1 ring-green-300 transition">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-      </svg>
-      <span>Upload Document</span>
-    </a>
-
-    {% if user.level == 'admin' %}
-      <a href="{% url 'daftar_verifikasi' %}" class="flex items-center gap-2 text-gray-800 bg-yellow-100 hover:bg-yellow-200 px-4 py-2 rounded-lg shadow-sm ring-1 ring-yellow-300 transition">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span>Verifikasi Dokumen</span>
-      </a>
-    {% endif %}
-
-    <form action="{% url 'logout' %}" method="post">
-      {% csrf_token %}
-      <button type="submit" class="w-full flex items-center gap-2 text-gray-800 bg-red-100 hover:bg-red-200 px-4 py-2 rounded-lg shadow-sm ring-1 ring-red-300 transition">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1m0-10V5m0 6a2 2 0 100-4 2 2 0 000 4z" />
-        </svg>
-        <span>Logout</span>
-      </button>
-    </form>
-  </nav>
-</aside>
-
-<!-- Main Content -->
-<main class="flex-1 p-10 animate-fade">
-  <!-- Header -->
-  <div class="flex items-center gap-4 mb-6">
-    <img src="{% static 'img/logo-koperasi.png' %}" alt="Logo Koperasi" class="w-12 h-12">
-    <div>
-      <h2 class="text-2xl font-bold text-gray-800 font-[Poppins] leading-snug">Statistik Arsip Dokumen</h2>
-      <p class="text-sm text-gray-500 font-[Poppins]">Berikut adalah daftar dokumen yang telah diunggah oleh setiap unit kerja.</p>
+{% block content %}
+<div class="w-full">
+  <!-- HEADER -->
+  <section class="mb-10">
+    <div class="flex items-center gap-4 mb-3 animate-fade">
+      <div class="rounded-xl p-3 bg-gradient-to-tr from-orange-300 via-orange-100 to-white shadow-lg">
+        <img src="{% static 'img/logo-koperasi.png' %}" alt="Logo Koperasi" class="w-12 h-12">
+      </div>
+      <div>
+        <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight mb-1">Statistik Arsip Dokumen</h1>
+        <p class="text-lg text-gray-500 font-medium">Dokumen yang telah diunggah setiap unit kerja dan statistik keseluruhan.</p>
+      </div>
     </div>
-  </div>
+  </section>
 
-    <!-- Pencarian Dokumen -->
-    <form method="get" class="flex flex-wrap gap-4 items-center mb-6">
+  <!-- MODERN STATISTIC CARDS -->
+  <section class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+    <div class="relative bg-gradient-to-br from-blue-50 via-white to-blue-100 rounded-xl shadow-lg p-6 flex items-center gap-5 border border-blue-100 hover:shadow-2xl transition group">
+      <div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-200/40 group-hover:scale-110 transition">
+        <svg class="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <rect x="4" y="4" width="16" height="16" rx="2" fill="white"/>
+          <path d="M8 8h8M8 12h8M8 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <div class="font-semibold text-[15px] text-blue-600 mb-1 tracking-wide">Total Dokumen Aktif</div>
+        <div class="font-bold text-2xl text-blue-800 leading-tight mb-1">{{ total_dokumen }}</div>
+        <div class="text-xs text-gray-400">Sesuai hasil pencarian/filter di tabel</div>
+      </div>
+    </div>
+    <div class="relative bg-gradient-to-br from-gray-50 via-white to-gray-200 rounded-xl shadow-lg p-6 flex items-center gap-5 border border-gray-200 hover:shadow-2xl transition group">
+      <div class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-300/40 group-hover:scale-110 transition">
+        <svg class="w-7 h-7 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" fill="white"/>
+          <path d="M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <div class="font-semibold text-[15px] text-gray-700 mb-1 tracking-wide">Total Semua Dokumen</div>
+        <div class="font-bold text-2xl text-gray-800 leading-tight mb-1">{{ total_dokumen_all }}</div>
+        <div class="text-xs text-gray-400">Seluruh dokumen di database</div>
+      </div>
+    </div>
+    <div class="relative bg-gradient-to-br from-green-50 via-white to-green-100 rounded-xl shadow-lg p-6 flex items-center gap-5 border border-green-100 hover:shadow-2xl transition group">
+      <div class="flex items-center justify-center w-12 h-12 rounded-full bg-green-200/40 group-hover:scale-110 transition">
+        <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M3 7a2 2 0 012-2h4l2 3h7a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" fill="white" stroke="currentColor"/>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <div class="font-semibold text-[15px] text-green-700 mb-1 tracking-wide">Total Dokumen Unit</div>
+        <div class="font-bold text-2xl text-green-800 leading-tight mb-1">{{ dokumen_unit }}</div>
+        <div class="text-xs text-gray-400">Dokumen pada unit kerja login</div>
+      </div>
+    </div>
+  </section>
 
-      <!-- Dropdown Unit -->
-      <select name="unit" class="px-3 py-2 border rounded-md text-sm">
-        <option value="">Semua Unit</option>
+  <!-- FILTER & SEARCH FORM -->
+  <section class="mb-10">
+    <form method="get" action="{% url 'admin_dashboard' %}" class="bg-white rounded-2xl shadow-lg flex flex-wrap gap-4 items-center p-8">
+      <select name="unit" class="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-300 text-base">
+        <option value="">Pilih Unit</option>
         {% for unit in daftar_unit %}
           <option value="{{ unit }}" {% if unit == unit_dipilih %}selected{% endif %}>{{ unit }}</option>
         {% endfor %}
       </select>
-
-      <!-- Dropdown Tahun -->
-      <select name="tahun" class="px-3 py-2 border rounded-md text-sm">
-        <option value="">Semua Tahun</option>
+      <select name="tahun" class="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-300 text-base">
+        <option value="">Pilih Tahun</option>
         {% for t in daftar_tahun %}
-          <option value="{{ t }}" {% if t == tahun_dipilih|add:""|stringformat:"s" %}selected{% endif %}>{{ t }}</option>
+          <option value="{{ t }}" {% if t == tahun_dipilih|stringformat:"s" %}selected{% endif %}>{{ t }}</option>
         {% endfor %}
       </select>
-
-      <!-- Dropdown Bulan -->
-      <select name="bulan" class="px-3 py-2 border rounded-md text-sm">
-        <option value="">Semua Bulan</option>
+      <select name="bulan" class="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-300 text-base">
+        <option value="">Pilih Bulan</option>
         {% for b in daftar_bulan %}
           <option value="{{ b }}" {% if b == bulan_dipilih %}selected{% endif %}>{{ b }}</option>
         {% endfor %}
       </select>
-
-      <!-- Dropdown Jenis -->
-      <select name="jenis" class="px-3 py-2 border rounded-md text-sm">
-        <option value="">Semua Jenis</option>
+      <select name="jenis" class="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-300 text-base">
+        <option value="">Pilih Jenis Dokumen</option>
         {% for jenis in daftar_jenis %}
           <option value="{{ jenis }}" {% if jenis == jenis_dipilih %}selected{% endif %}>{{ jenis|get_display_jenis }}</option>
         {% endfor %}
       </select>
-
-      <!-- 🔍 Input Pencarian Manual (diletakkan setelah 'jenis') -->
-      <input
-        type="text"
-        name="q"
-        placeholder="Telusuri Arsip Dokumen..."
-        value="{{ request.GET.q }}"
-        class="px-10 py-2 border rounded-md text-sm shadow-sm"
-      >
-
-      <!-- Tombol Search -->
-      <button type="submit" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-md text-sm flex items-center gap-2 transition duration-200">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M21 21l-4-4m0 0A7.5 7.5 0 103.6 3.6a7.5 7.5 0 0012.95 12.95z" />
+      <select name="rak" class="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-300 text-base">
+        <option value="">Pilih Rak</option>
+        {% for rak in daftar_rak %}
+          <option value="{{ rak }}" {% if rak == rak_dipilih %}selected{% endif %}>{{ rak }}</option>
+        {% endfor %}
+      </select>
+      <select name="kardus" class="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-300 text-base">
+        <option value="">Pilih Kardus</option>
+        {% for kardus in daftar_kardus %}
+          <option value="{{ kardus }}" {% if kardus == kardus_dipilih %}selected{% endif %}>{{ kardus }}</option>
+        {% endfor %}
+      </select>
+      <div class="relative">
+        <input type="text" name="q" placeholder="Cari Arsip Dokumen..." value="{{ request.GET.q }}" class="pl-10 pr-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-300 w-72 text-base"/>
+        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-3 h-5 w-5 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4-4m0 0A7.5 7.5 0 103.6 3.6a7.5 7.5 0 0012.95 12.95z" />
         </svg>
-        <span>Search</span>
+      </div>
+      <button type="submit" class="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold transition shadow text-base">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M21 21l-4.35-4.35m1.44-5.4a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0z"/>
+        </svg>
+        Search
       </button>
     </form>
+  </section>
 
-
-    <!-- Tabel Dokumen -->
-    <div class="p-6 bg-white rounded-2xl shadow-md mb-8">
-      <h2 class="text-xl font-semibold text-gray-800 mb-4">Daftar Dokumen</h2>
-      <div class="overflow-x-auto rounded-xl shadow-md ring-1 ring-gray-200">
-      <table class="min-w-full text-sm text-left text-gray-700 rounded-xl overflow-hidden">
-        <thead style="background-color: #3f718f;" class="text-white uppercase">
-          <tr>
-            <th class="px-4 py-3">Id Arsip</th>
-            <th class="px-4 py-2">No. Berkas</th>
-            <th class="px-4 py-3">Unit</th>
-            <th class="px-4 py-3">Tahun</th>
-            <th class="px-4 py-3">Bulan</th>
-            <th class="px-4 py-3">Jenis</th>
-            <th class="px-6 py-3">Tanggal Upload</th>
-            <th class="px-4 py-3">Diunggah Oleh</th>
-            <th class="px-4 py-3">Scan</th>
-            <th class="px-4 py-3">File</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white">
-          {% for dokumen in dokumen_list %}
-          <tr class="hover:bg-gray-50 transition duration-200">
-            <td class="px-4 py-3">{{ dokumen.arsip_id }}</td>
-            <td class="px-4 py-2">{{ dokumen.nomor_berkas }}</td>
-            <td class="px-4 py-2">{{ dokumen.unit }}</td>
-            <td class="px-4 py-2">{{ dokumen.tahun }}</td>
-            <td class="px-4 py-2">{{ dokumen.bulan }}</td>
-            <td class="px-4 py-2">{{ dokumen.get_jenis_display }}</td>
-            <td class="px-6 py-3">{{ dokumen.created_at|date:"d M Y H:i" }}</td>
-            <td class="px-4 py-2">{{ dokumen.diunggah_oleh.username }}</td>
-            <td class="px-4 py-2 text-blue-600">
-              {% if dokumen.file_scan %}
-                <a href="{{ dokumen.file_scan.url }}" target="_blank">Lihat</a>
-              {% else %}
-                <span class="text-gray-400">-</span>
-              {% endif %}
-            </td>
-            <td class="px-4 py-2 text-green-600">
-              {% if dokumen.file_upload %}
-                <a href="{{ dokumen.file_upload.url }}" target="_blank">Unduh</a>
-              {% else %}
-                <span class="text-gray-400">-</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="6" class="text-center text-gray-400 py-4">Belum ada dokumen.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  <!-- DATA TABLE -->
+  <section class="bg-white shadow-xl rounded-2xl p-10 mb-12 w-full overflow-x-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-2xl font-bold text-gray-800">Daftar Dokumen</h2>
     </div>
-    </div>
+    <table class="min-w-full rounded-xl overflow-hidden text-base divide-y divide-gray-200">
+      <thead>
+        <tr class="bg-gradient-to-r from-blue-100 via-white to-blue-50">
+          <th class="py-4 px-2 text-center font-semibold">Id Arsip</th>
+          <th class="py-4 text-center font-semibold">No. Berkas</th>
+          <th class="py-4 text-center font-semibold">No. Surat</th>
+          <th class="py-4 text-center font-semibold">Unit</th>
+          <th class="py-4 text-center font-semibold">Tahun</th>
+          <th class="py-4 text-center font-semibold">Bulan</th>
+          <th class="py-4 font-semibold">Jenis</th>
+          <th class="py-4 text-center font-semibold">Upload</th>
+          <th class="py-4 text-center font-semibold">Uploader</th>
+          <th class="py-4 text-center font-semibold">Scan</th>
+          <th class="py-4 text-center font-semibold">File</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dokumen in dokumen_page %}
+        <tr class="hover:bg-blue-50/80 transition rounded-xl">
+          <td class="text-center font-mono py-3">{{ forloop.counter0|add:doc_index_start }}</td>
+          <td class="text-center py-3">{{ dokumen.nomor_berkas|default:"-" }}</td>
+          <td class="text-center py-3">{{ dokumen.nomor_surat|default:"-" }}</td>
+          <td class="text-center py-3">{{ dokumen.unit|default:"-" }}</td>
+          <td class="text-center py-3">{{ dokumen.tahun|default:"-" }}</td>
+          <td class="text-center py-3">{{ dokumen.bulan|default:"-" }}</td>
+          <td class="py-3">{{ dokumen.get_jenis_display|default:"-" }}</td>
+          <td class="text-center py-3 whitespace-nowrap">{{ dokumen.created_at|date:"d M Y H:i"|default:"-" }}</td>
+          <td class="text-center py-3">{{ dokumen.diunggah_oleh.username|default:"-" }}</td>
+          <td class="text-center py-3">
+            {% if dokumen.file_scan %}
+              <a href="{{ dokumen.file_scan.url }}" target="_blank" title="Lihat PDF" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-50 hover:bg-red-100 transition shadow">
+                <svg class="w-5 h-5" fill="#B91C1C" viewBox="0 0 384 512"><path d="M181.9 256.1c-5.5-1.7-11.3-2.6-17.1-2.6H128V352h36.8c8.3 0 16.3-2.2 23.2-6.2 19.5-11.3 27.1-36.1 15.8-55.5-5.6-9.7-14.8-17.1-25.9-20.2zm-17.1 70.2H144v-44.3h20.8c19.9 0 32 14.2 32 22.1 0 7.9-12.1 22.2-32 22.2zM384 121.9V128H256V0h6.1c6.4 0 12.5 2.5 17 7l105.9 105.9c4.5 4.5 7 10.6 7 17zm-64 23.9V128H256V0h-6.1c-6.4 0-12.5 2.5-17 7L127 105.9c-4.5 4.5-7 10.6-7 17v6.1h128v128h128v-6.1c0-6.4-2.5-12.5-7-17L320 145.7zm-176 6.2h-40V352h40c8.8 0 16-7.2 16-16V144c0-8.8-7.2-16-16-16z"/></svg>
+              </a>
+            {% else %}
+              <span class="text-gray-400">-</span>
+            {% endif %}
+          </td>
+          <td class="text-center py-3">
+            {% if dokumen.file_upload %}
+              <a href="{{ dokumen.file_upload.url }}" target="_blank" class="inline-block px-3 py-1 rounded-full bg-green-100 text-green-700 font-semibold hover:bg-green-200 transition shadow">
+                Unduh
+              </a>
+            {% else %}
+              <span class="text-gray-400">-</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="11" class="text-center text-gray-400 py-8">Belum ada dokumen.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-    <!-- Statistik Ringkas per Unit -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-      {% for unit, jumlah in jumlah_per_unit.items %}
-      <div class="bg-white rounded-xl shadow p-4 hover:scale-[1.03] transition duration-300">
-        <p class="text-sm text-gray-500">Unit</p>
-        <h2 class="text-xl font-bold text-gray-800">{{ unit }}</h2>
-        <p class="text-lg text-blue-500">{{ jumlah }} dokumen</p>
-      </div>
-      {% endfor %}
+    <!-- PAGINATION MODERN -->
+    <div class="flex justify-end mt-8">
+      <nav class="flex gap-2 items-center">
+        {% if dokumen_page.has_previous %}
+          <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1" class="pagination-btn bg-white rounded-full shadow w-10 h-10 flex items-center justify-center hover:bg-blue-50 text-blue-600 font-bold">&laquo;</a>
+          <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ dokumen_page.previous_page_number }}" class="pagination-btn bg-white rounded-full shadow w-10 h-10 flex items-center justify-center hover:bg-blue-50 text-blue-600 font-bold">&lsaquo;</a>
+        {% else %}
+          <span class="pagination-btn bg-gray-100 rounded-full w-10 h-10 flex items-center justify-center text-gray-400 font-bold" disabled>&laquo;</span>
+          <span class="pagination-btn bg-gray-100 rounded-full w-10 h-10 flex items-center justify-center text-gray-400 font-bold" disabled>&lsaquo;</span>
+        {% endif %}
+        {% for num in dokumen_page.paginator.page_range %}
+          {% if num >= dokumen_page.number|add:'-2' and num <= dokumen_page.number|add:'2' %}
+            {% if dokumen_page.number == num %}
+              <span class="pagination-btn bg-blue-600 text-white rounded-full shadow w-10 h-10 flex items-center justify-center font-bold border-2 border-blue-400">{{ num }}</span>
+            {% else %}
+              <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}" class="pagination-btn bg-white rounded-full shadow w-10 h-10 flex items-center justify-center hover:bg-blue-50 text-blue-600 font-bold">{{ num }}</a>
+            {% endif %}
+          {% elif num == 1 or num == dokumen_page.paginator.num_pages %}
+            <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}" class="pagination-btn bg-white rounded-full shadow w-10 h-10 flex items-center justify-center hover:bg-blue-50 text-blue-600 font-bold">{{ num }}</a>
+            {% if num == 1 and dokumen_page.number > 4 %}
+              <span class="px-2 text-gray-400">...</span>
+            {% elif num == dokumen_page.paginator.num_pages and dokumen_page.number < dokumen_page.paginator.num_pages|add:'-3' %}
+              <span class="px-2 text-gray-400">...</span>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        {% if dokumen_page.has_next %}
+          <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ dokumen_page.next_page_number }}" class="pagination-btn bg-white rounded-full shadow w-10 h-10 flex items-center justify-center hover:bg-blue-50 text-blue-600 font-bold">&rsaquo;</a>
+          <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ dokumen_page.paginator.num_pages }}" class="pagination-btn bg-white rounded-full shadow w-10 h-10 flex items-center justify-center hover:bg-blue-50 text-blue-600 font-bold">&raquo;</a>
+        {% else %}
+          <span class="pagination-btn bg-gray-100 rounded-full w-10 h-10 flex items-center justify-center text-gray-400 font-bold" disabled>&rsaquo;</span>
+          <span class="pagination-btn bg-gray-100 rounded-full w-10 h-10 flex items-center justify-center text-gray-400 font-bold" disabled>&raquo;</span>
+        {% endif %}
+      </nav>
     </div>
+  </section>
 
-    <!-- Grafik Dokumen Per Bulan + Pie Persentase Jenis -->
-    <div class="bg-white rounded-xl shadow p-6 mb-10 animate-fade">
-      <h2 class="text-xl font-semibold mb-4">Statistik Dokumen</h2>
-      
-      <div class="flex flex-col md:flex-row gap-6 items-start">
-        
-        <!-- Grafik Dokumen Per Bulan (besar) -->
-        <div class="w-full md:w-2/3">
-          <h3 class="text-lg font-medium mb-2">Grafik Dokumen Per Bulan</h3>
-          <canvas id="dokumenPerBulan" class="h-80 md:h-[400px] w-full"></canvas>
-        </div>
-        
-        <!-- Grafik Pie Jenis Dokumen (kecil) -->
-        <div class="w-full md:w-1/3">
-          <h3 class="text-lg font-medium mb-2">Persentase Berdasarkan Jenis</h3>
-          <div class="w-full max-w-xs">
-            <canvas id="dokumenPerJenis" class="h-32 w-full"></canvas>
+  <!-- CHARTS: ATAS BAWAH, LIGHT/GRADIENT CARD, MODERN -->
+  <section class="w-full mb-12">
+    <!-- MODERN AREA CHART CARD (LIGHT/GRADIENT) -->
+    <div class="bg-gradient-to-br from-blue-50 via-white to-blue-100 rounded-2xl shadow-xl p-0 relative w-full mb-10 border border-blue-100" style="min-height:370px;">
+      <div class="absolute top-0 left-0 w-full h-full pointer-events-none" style="background:linear-gradient(180deg,#f5f8fd 0%,#eaf0fa 100%);opacity:.93;z-index:0;"></div>
+      <div class="relative z-10 p-10 pb-0 flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+          <div class="text-xs font-bold text-blue-500 tracking-wide mb-1">AREA CHART</div>
+          <div class="flex items-center gap-2">
+            <span class="text-2xl font-extrabold text-blue-900">Statistik Arsip</span>
+            <span class="text-green-500 font-bold text-lg">▲ 6.4%</span>
           </div>
+          <div class="text-md text-gray-500 mt-1">Jumlah dokumen arsip per bulan.</div>
         </div>
-
+        <div>
+          <svg class="w-8 h-8 text-blue-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 10V4h6M20 14v6h-6M14 4h6v6M4 20h6v-6"/>
+          </svg>
+        </div>
+      </div>
+      <div class="px-2 pb-10 pt-2">
+        <div id="areaChart" class="w-full" style="height:260px;"></div>
       </div>
     </div>
 
-  <!-- Data untuk Grafik -->
-  <script id="bulan-labels" type="application/json">{{ bulan_labels|safe }}</script>
-  <script id="bulan-data" type="application/json">{{ bulan_data|safe }}</script>
-  <script id="jenis-labels" type="application/json">{{ jenis_labels|safe }}</script>
-  <script id="jenis-data" type="application/json">{{ jenis_data|safe }}</script>
+    <!-- MODERN PIE/DONUT CHART CARD (LIGHT/GRADIENT) -->
+    <div class="bg-gradient-to-br from-gray-50 via-white to-blue-50 rounded-2xl shadow-xl p-0 relative w-full border border-blue-100" style="min-height:320px;">
+      <div class="absolute top-0 left-0 w-full h-full pointer-events-none" style="background:linear-gradient(180deg,#f7f8fa 0%,#e4e8f3 100%);opacity:.93;z-index:0;"></div>
+      <div class="relative z-10 p-10 pb-0 flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+          <div class="text-xs font-bold text-blue-400 tracking-wide mb-1">DONUT CHART</div>
+          <div class="flex items-center gap-2">
+            <span class="text-2xl font-extrabold text-gray-800">Kategori Arsip</span>
+          </div>
+          <div class="text-md text-gray-500 mt-1">Distribusi dokumen arsip per kategori.</div>
+        </div>
+        <div>
+          <svg class="w-8 h-8 text-blue-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 10V4h6M20 14v6h-6M14 4h6v6M4 20h6v-6"/>
+          </svg>
+        </div>
+      </div>
+      <div class="flex flex-row items-center gap-10 px-2 pb-10 pt-2">
+        <div id="donutChartModern" style="width:250px;height:250px;"></div>
+        <div id="donutLegendModern" class="flex flex-col gap-5"></div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
 
-  <!-- Script ChartJS -->
-  <script>
-    const bulanLabels = JSON.parse(document.getElementById('bulan-labels').textContent);
-    const bulanData = JSON.parse(document.getElementById('bulan-data').textContent);
-    const jenisLabels = JSON.parse(document.getElementById('jenis-labels').textContent);
-    const jenisData = JSON.parse(document.getElementById('jenis-data').textContent);
+{% block extra_body %}
+<!-- ApexCharts CDN (modern chart) -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var bulanLabels = JSON.parse('{{ bulan_labels|escapejs }}');
+  var dataBaru = JSON.parse('{{ data_baru|escapejs }}');
+  var donutLabels = JSON.parse('{{ donut_labels|escapejs }}');
+  var donutData = JSON.parse('{{ donut_data|escapejs }}');
+  var donutColors = JSON.parse('{{ donut_colors|escapejs }}');
 
-    new Chart(document.getElementById('dokumenPerBulan'), {
-      type: 'bar',
-      data: {
-        labels: bulanLabels,
-        datasets: [
-          {
-            label: 'Jumlah Dokumen (Bar)',
-            data: bulanData,
-            backgroundColor: '#fb923c',
-            borderRadius: 6,
-            yAxisID: 'y',
-          },
-          {
-            label: 'Tren Dokumen (Line)',
-            data: bulanData,
-            type: 'line',
-            borderColor: '#1d4ed8',  // biru tua
-            borderWidth: 2,
-            fill: false,
-            tension: 0.3,
-            yAxisID: 'y',
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            display: true,
-            position: 'top'
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Jumlah Dokumen'
-            }
-          }
-        }
-      }
-    });
-
-  new Chart(document.getElementById('dokumenPerJenis'), {
-    type: 'pie',
-    data: {
-      labels: jenisLabels.map(label => label.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())),
-      datasets: [{
-        data: jenisData,
-        backgroundColor: [
-          '#CAD2C5', '#84A98C', '#52796F', '#354F52', '#2F3E46',
-          '#A3B18A', '#D9ED92', '#F0EFEB', '#BFD8BD', '#C3D6C2',
-          '#9CAEA9', '#E9EDC9', '#CCD5AE', '#B5CDA3', '#B7B7A4',
-          '#D5BDAB', '#B4CFB0', '#A9C5A0'
-        ],
-        borderWidth: 1,
-        borderColor: '#ffffff'
-      }]
+  // MODERN AREA CHART (LIGHT/GRADIENT)
+  var areaChart = new ApexCharts(document.querySelector("#areaChart"), {
+    chart: {
+      type: 'area',
+      height: 240,
+      fontFamily: 'Inter, Arial, sans-serif',
+      toolbar: { show: false },
+      background: 'transparent',
+      dropShadow: { enabled: true, top: 3, left: 0, blur: 5, color: '#00eaff', opacity: 0.25 }
     },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: {
-            color: '#4B5563',
-            font: { size: 12 }
-          }
-        }
+    grid: {
+      borderColor: '#e4e7ed',
+      strokeDashArray: 4,
+      padding: { left: 12, right: 12, top: 0, bottom: 0 }
+    },
+    colors: ['#00b0ff'],
+    dataLabels: { enabled: false },
+    stroke: { curve: 'smooth', width: 3, lineCap: 'round' },
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shade: 'light',
+        type: "vertical",
+        shadeIntensity: 0.6,
+        opacityFrom: 0.7,
+        opacityTo: 0.1,
+        stops: [0, 90, 100]
       }
+    },
+    series: [{
+      name: 'Dokumen Baru',
+      data: dataBaru
+    }],
+    xaxis: {
+      categories: bulanLabels,
+      labels: {
+        style: { colors: '#6b7280', fontSize: '13px', fontWeight:'bold' }
+      },
+      axisBorder: { show: false },
+      axisTicks: { show: false }
+    },
+    yaxis: {
+      labels: {
+        style: { colors: '#6b7280', fontSize: '13px', fontWeight:'bold' },
+        formatter: function(val){ return val; }
+      },
+      min: 0,
+      tickAmount: 4
+    },
+    tooltip: {
+      theme: 'light',
+      style: { fontSize: '15px', fontWeight:'bold' }
     }
   });
+  areaChart.render();
 
+  // MODERN DONUT CHART (LIGHT)
+  var donutChart = new ApexCharts(document.querySelector("#donutChartModern"), {
+    chart: {
+      type: 'donut',
+      height: 250,
+      fontFamily: 'Inter, Arial, sans-serif'
+    },
+    labels: donutLabels,
+    colors: donutColors,
+    legend: { show: false },
+    dataLabels: { enabled: true, style: { fontSize:'16px', fontWeight:'bold' } },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: '65%',
+          labels: {
+            show: true,
+            name: { show:true, fontSize:'18px', color:'#222', fontWeight:'bold', offsetY: -10 },
+            value: { show:true, fontSize:'18px', color:'#2563eb', fontWeight:'bold', offsetY: 10, formatter: (val)=> val+' dokumen' },
+            total: { show:true, label:'Total', fontSize:'17px', color:'#222', formatter:()=>donutData.reduce((a,b)=>a+b,0) }
+          }
+        }
+      }
+    },
+    series: donutData,
+    tooltip: {
+      fillSeriesColor: false,
+      theme: 'light',
+      style: { fontSize:'15px', fontWeight:'bold' },
+      y: { formatter: (val)=> val+' dokumen' }
+    }
+  });
+  donutChart.render();
 
-    // SweetAlert Welcome Message
-    Swal.fire({
+  // Modern Donut Legend Card
+  let legendHtml = '';
+  donutLabels.forEach((label, i) => {
+    legendHtml += `
+      <div class="flex items-center rounded-xl px-5 py-3 gap-3 bg-gray-100 shadow font-semibold text-base">
+        <span style="display:inline-block;width:28px;height:28px;border-radius:50%;background:${donutColors[i]};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.08);"></span>
+        <span class="text-gray-700">${label}</span>
+        <span class="ml-auto text-blue-600">${donutData[i]} dokumen</span>
+      </div>`;
+  });
+  document.getElementById('donutLegendModern').innerHTML = legendHtml;
+
+  // SweetAlert
+  Swal.fire({
       title: 'Selamat datang!',
       text: 'Kamu berhasil login sebagai Admin.',
       imageUrl: 'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3anZnNWJrYnVrZ25idTYzYWU0cXpuaXF5Y3I0NjFyNTY2cmgwbWdzaiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/yyxyJh6db1mmZ8BsNl/giphy.gif',
@@ -333,7 +385,7 @@
       imageAlt: 'Welcome Animation',
       timer: 3000,
       showConfirmButton: false
-    });
-  </script>
-</body>
-</html>
+  });
+});
+</script>
+{% endblock %}

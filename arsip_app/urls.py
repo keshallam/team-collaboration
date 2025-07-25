@@ -14,6 +14,11 @@ urlpatterns = [
     path('dashboard/admin/', views.admin_dashboard, name='admin_dashboard'),
     path('dashboard/uploader/', views.uploader_dashboard, name='uploader_dashboard'),
     path('dashboard/viewer/', views.viewer_dashboard, name='viewer_dashboard'),
+
+    # TAMBAHAN UNTUK SIDEBAR DYNAMIC CONTENT
+    path('dashboard/documents/', views.daftar_file, name='all_documents'),
+    path('dashboard/upload/', views.tambah_dokumen, name='upload_document'),
+    path('dashboard/verifikasi/', views.daftar_verifikasi, name='verifikasi_dokumen'),
     
     path('kelola/', views.daftar_file, name='daftar_file'),
     path('tambah/', views.tambah_dokumen, name='tambah_file'),
