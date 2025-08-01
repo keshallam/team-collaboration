@@ -8,7 +8,7 @@ class DokumenForm(forms.ModelForm):
         error_messages={
             'required': 'Kamu harus menyetujui terlebih dahulu sebelum mengirim.'
         },
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+        widget=forms.CheckboxInput(attrs={'class': 'wizard-checkbox'})
     )
 
     class Meta:

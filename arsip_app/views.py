@@ -1,6 +1,7 @@
 import os
 import json
 import calendar
+from urllib import request
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
@@ -12,9 +13,10 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Count, Q
 from django.utils import timezone
 from django.utils.text import capfirst
-
+from django.contrib import messages 
 from .models import Dokumen
 from .forms import DokumenForm
+from django import forms
 
 @login_required
 def dashboard(request):
@@ -210,28 +212,99 @@ def scanned_upload(request):
 
     return HttpResponse('Hanya menerima POST dengan file.', status=400)
 
+
 @login_required
 def tambah_dokumen(request):
-    if request.user.level not in ['admin', 'uploader']:
-        return HttpResponseForbidden("Kamu tidak punya akses untuk menambahkan dokumen.")
+    step = int(request.POST.get('step', request.GET.get('step', 1)))
+    step = max(1, min(step, 5))
 
-    initial = {'unit': request.user.unit_kerja}
-    scanned_file = request.session.pop('scanned_file', None)
-    if scanned_file:
-        initial['file_scan'] = scanned_file
+    step_fields = {
+        1: ['nama_file', 'jenis', 'unit', 'nomor_berkas', 'nomor', 'nomor_surat'],
+        2: ['tahun', 'bulan'],
+        3: ['rak', 'kardus'],
+        4: ['file_scan', 'file_upload'],
+        5: ['status', 'setuju'],
+    }
 
-    form = DokumenForm(request.POST or None, request.FILES or None, initial=initial)
-    if request.method == 'POST' and form.is_valid():
-        dokumen = form.save(commit=False)
-        if dokumen.unit != request.user.unit_kerja:
-            return HttpResponse("Tidak boleh unggah dokumen untuk unit lain!", status=403)
-        dokumen.diunggah_oleh = request.user
-        dokumen.save()
-        return redirect('daftar_file')
+    def get_step_form(step, step_fields):
+        class StepForm(forms.ModelForm):
+            class Meta:
+                model = Dokumen
+                if step < 5:
+                    fields = step_fields[step]
+                else:
+                    # Di step 5, FINAL FORM, pakai semua fields dari semua step!
+                    fields = (
+                        step_fields[1] + step_fields[2] + step_fields[3] +
+                        step_fields[4] + step_fields[5]
+                    )
+            if step == 5:
+                setuju = forms.BooleanField(
+                    required=True,
+                    label='Saya menyetujui bahwa data yang saya masukkan sudah benar.',
+                    error_messages={
+                        'required': 'Kamu harus menyetujui terlebih dahulu sebelum mengirim.'
+                    },
+                    widget=forms.CheckboxInput(attrs={'class': 'wizard-checkbox'})
+                )
+        return StepForm
+
+    if 'wizard_data' not in request.session:
+        request.session['wizard_data'] = {}
+    wizard_data = request.session['wizard_data']
+
+    initial = wizard_data.copy()
+    StepForm = get_step_form(step, step_fields)
+    form = StepForm(request.POST or None, request.FILES or None, initial=initial)
+
+    print("STEP:", step)
+    print("FIELDS:", list(form.fields.keys()))
+
+    if request.method == 'POST':
+        if 'prev_step' in request.POST:
+            prev = step - 1
+            return redirect(f"{request.path}?step={prev}")
+        elif form.is_valid():
+            # Simpan data ke wizard_data (tanpa file upload!)
+            for field in step_fields[step]:
+                if field not in ['file_scan', 'file_upload']:
+                    wizard_data[field] = form.cleaned_data.get(field)
+            request.session['wizard_data'] = wizard_data
+
+            if step < 5:
+                return redirect(f"{request.path}?step={step+1}")
+            else:
+                # FINAL SUBMIT: Gabung data session + ambil file dari request.FILES
+                final_data = wizard_data.copy()
+                final_data['status'] = form.cleaned_data.get('status')
+                final_data['setuju'] = form.cleaned_data.get('setuju')
+
+                # File upload ambil dari request.FILES, bukan dari session
+                final_files = {}
+                for file_field in ['file_scan', 'file_upload']:
+                    if file_field in request.FILES:
+                        final_files[file_field] = request.FILES[file_field]
+
+                # DEBUG: print semua data sebelum simpan
+                print("SESSION WIZARD DATA:", wizard_data)
+                print("FINAL DATA:", final_data)
+                print("FILES:", final_files)
+
+                final_form = get_step_form(5, step_fields)(final_data, final_files)
+                if final_form.is_valid():
+                    dokumen = final_form.save(commit=False)
+                    dokumen.diunggah_oleh = request.user
+                    dokumen.save()
+                    request.session.pop('wizard_data', None)
+                    messages.success(request, "Dokumen berhasil diupload!")
+                    return dashboard(request)  # BARIS INI YANG DIUBAH
+                else:
+                    print("FORM ERROR:", final_form.errors)
+                    form = final_form
 
     return render(request, 'arsip_app/tambah_dokumen.html', {
         'form': form,
-        'scanned_file': scanned_file,
+        'step': step,
     })
 
 @login_required
@@ -284,9 +357,9 @@ def hapus_dokumen(request, id):
     dokumen = get_object_or_404(Dokumen, pk=id)
     if request.user.level != 'admin' or dokumen.unit != request.user.unit_kerja:
         return HttpResponse('Tidak diizinkan.', status=403)
-
     dokumen.delete()
-    return redirect('daftar_file')
+    messages.success(request, "Dokumen berhasil dihapus!")
+    return redirect('all_documents')
 
 @login_required
 def download_file(request, dokumen_id, tipe_file):

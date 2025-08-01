@@ -7,7 +7,7 @@ SECRET_KEY = 'django-insecure-2+d3r-i6w_6o+s+odn3g1x&yt10mm)2y8f+pvwng7mu_o&g^$&
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.100.79', 'localhost', '127.0.0.1', 'arsip-kantor.local']
+ALLOWED_HOSTS = ['192.168.100.79', 'localhost', '127.0.0.1', 'arsip-kantor.local', '*.ngrok-free.app']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -16,7 +16,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'arsip_app',
+    'arsip_app', 
+    'widget_tweaks', 
 ]
 
 AUTH_USER_MODEL = 'arsip_app.CustomUser'

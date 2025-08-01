@@ -1,173 +1,165 @@
 {% extends "base.html" %}
-{% block title %}Tambah Dokumen{% endblock %}
+{% load static %}
+{% load widget_tweaks %}
 
 {% block content %}
-<div class="flex justify-center items-center min-h-[88vh] bg-[#f6f7f9]">
-  <div class="form-card max-w-2xl w-full mx-2">
-    <h2 class="text-3xl font-bold text-center text-green-700 mb-7 tracking-wide">
-      <span>Tambah Dokumen Baru</span>
-    </h2>
-
-    <!-- Stepper Progress -->
-    <div class="stepper mb-8">
-      <div class="stepper-step active">1</div>
-      <div class="stepper-line"></div>
-      <div class="stepper-step">2</div>
-      <div class="stepper-line"></div>
-      <div class="stepper-step">3</div>
-      <div class="stepper-line"></div>
-      <div class="stepper-step">4</div>
+<div class="flex min-h-screen bg-[#FAFAFB] font-sans">
+  <section class="flex-1 flex flex-row justify-center pt-10 pb-16 px-2 md:px-8 items-start">
+    <!-- Stepper -->
+    <div class="flex flex-col items-center w-[300px] pt-2 md:pt-10 mx-auto">
+      <div class="relative flex flex-col items-center w-full">
+        <div class="absolute left-1/2 top-0 -translate-x-1/2 h-full w-0.5 bg-gray-200 z-0"></div>
+        {% for s in "12345" %}
+        <div class="flex flex-row items-center w-full relative z-10 mb-6 last:mb-0">
+          <div class="flex flex-col items-end justify-center w-[150px] pr-3 text-right">
+            <span class="text-xs text-gray-400 mb-0.5">Step {{ forloop.counter }}</span>
+            <span class="font-semibold text-base text-gray-800 leading-tight whitespace-pre-line">
+              {% if forloop.counter == 1 %}Informasi Dokumen
+              {% elif forloop.counter == 2 %}Periode Arsip
+              {% elif forloop.counter == 3 %}Lokasi Fisik
+              {% elif forloop.counter == 4 %}Berkas Digital (Upload)
+              {% elif forloop.counter == 5 %}Status & Persetujuan{% endif %}
+            </span>
+            <span class="text-xs text-gray-400 -mt-1 whitespace-pre-line">
+              {% if forloop.counter == 1 %}Document Information
+              {% elif forloop.counter == 2 %}Archive Period
+              {% elif forloop.counter == 3 %}Physical Location
+              {% elif forloop.counter == 4 %}Digital File (upload)
+              {% elif forloop.counter == 5 %}Status & Approval{% endif %}
+            </span>
+          </div>
+          <div class="flex flex-col items-center">
+            <span class="flex items-center justify-center w-10 h-10 rounded-full border-2
+              {% if step == forloop.counter %}
+                border-blue-700 bg-blue-700 text-white
+              {% else %}
+                border-gray-300 bg-white text-gray-700
+              {% endif %}
+              font-semibold text-lg shadow transition-all duration-200 ease-in-out relative z-10">
+              {{ forloop.counter }}
+            </span>
+            {% if not forloop.last %}
+            <div style="height:44px"></div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="flex gap-2 mt-6 w-full justify-center">
+        {% if step > 1 %}
+        <form method="post" action="">
+          {% csrf_token %}
+          <input type="hidden" name="prev_step" value="{{ step }}">
+          <button type="submit" class="rounded-full bg-gray-100 text-gray-500 px-7 py-3 font-semibold shadow-sm hover:bg-gray-200 transition">←</button>
+        </form>
+        {% else %}
+        <button class="rounded-full bg-gray-100 text-gray-300 px-7 py-3 font-semibold shadow-sm" disabled>←</button>
+        {% endif %}
+        {% if step < 5 %}
+        <button form="wizard-form" type="submit" class="rounded-full bg-blue-700 text-white px-10 py-3 font-semibold shadow hover:bg-blue-800 transition">Next Step →</button>
+        {% else %}
+        <button form="wizard-form" type="submit" class="rounded-full bg-green-700 text-white px-10 py-3 font-semibold shadow hover:bg-green-800 transition">Simpan Dokumen</button>
+        {% endif %}
+      </div>
     </div>
-
-    {% if scanned_file %}
-    <div class="bg-blue-50 border-l-4 border-blue-400 text-blue-800 p-3 rounded mb-4 shadow">
-      <strong>File hasil scan terdeteksi:</strong>
-    </div>
-    <div class="mb-4">
-      {% if scanned_file|slice:"-4:" == ".pdf" %}
-        <embed src="{{ MEDIA_URL }}{{ scanned_file }}" width="100%" height="320px" type="application/pdf">
-      {% else %}
-        <img src="{{ MEDIA_URL }}{{ scanned_file }}" class="rounded shadow" style="max-width: 100%;" alt="Hasil scan">
-      {% endif %}
-    </div>
-    {% endif %}
-
-    <form method="post" enctype="multipart/form-data">
-      {% csrf_token %}
-
-      <!-- Informasi Dokumen -->
-      <div class="form-section">
-        <div class="section-icon">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-[25px] h-[25px]"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6M9 16h6M9 8h.01M12 20H6a2 2 0 01-2-2V6a2 2 0 012-2h7.586a2 2 0 011.414.586l2.414 2.414A2 2 0 0120 8.414V18a2 2 0 01-2 2z"/></svg>
-        </div>
-        <div class="form-section-content w-full">
-          <div class="form-section-title">Informasi Dokumen</div>
-          <div class="form-fields-grid">
-            {% for field in form %}
-              {% if field.name == "nama_file" or field.name == "unit" or field.name == "jenis" or field.name == "nomor_berkas" or field.name == "nomor" or field.name == "nomor_surat" %}
-                <div class="input-group">
-                  <label class="input-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                  {{ field.as_widget }}
-                  {% for error in field.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            {% endfor %}
-          </div>
-        </div>
+    <div class="flex-1 flex flex-col items-start justify-start pl-12">
+      <div class="w-full mb-3">
+        <span class="text-[18px] font-medium text-gray-700">Lengkapi field berikut ini</span>
       </div>
-
-      <!-- Periode Arsip -->
-      <div class="form-section">
-        <div class="section-icon">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-[25px] h-[25px]"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        </div>
-        <div class="form-section-content w-full">
-          <div class="form-section-title">Periode Arsip</div>
-          <div class="form-fields-grid">
+      {% if form.errors %}
+        <div class="mb-3 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+          <ul class="list-disc pl-5 text-sm">
             {% for field in form %}
-              {% if field.name == "tahun" or field.name == "bulan" %}
-                <div class="input-group">
-                  <label class="input-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                  {{ field.as_widget }}
-                  {% for error in field.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-
-      <!-- Lokasi Fisik -->
-      <div class="form-section">
-        <div class="section-icon">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-[25px] h-[25px]"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 21V7a2 2 0 00-2-2H6a2 2 0 00-2 2v14M8 21v-4a2 2 0 012-2h4a2 2 0 012 2v4"/></svg>
-        </div>
-        <div class="form-section-content w-full">
-          <div class="form-section-title">Lokasi Fisik</div>
-          <div class="form-fields-grid">
-            {% for field in form %}
-              {% if field.name == "rak" or field.name == "kardus" %}
-                <div class="input-group">
-                  <label class="input-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                  {{ field.as_widget }}
-                  {% for error in field.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-
-      <!-- Berkas Digital -->
-      <div class="form-section">
-        <div class="section-icon">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-[25px] h-[25px]"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.586-6.586A2 2 0 0015.172 7z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7V3a2 2 0 00-2-2H6a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg>
-        </div>
-        <div class="form-section-content w-full">
-          <div class="form-section-title">Berkas Digital (Upload)</div>
-          <div class="form-fields-grid">
-            {% for field in form %}
-              {% if field.name == "file_scan" or field.name == "file_upload" %}
-                <div class="input-group">
-                  <label class="input-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                  {{ field.as_widget }}
-                  {% for error in field.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-
-      <!-- Status dan Persetujuan -->
-      <div class="form-section">
-        <div class="section-icon">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-[25px] h-[25px]"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6h6v6M9 7h6M6 21h12a2 2 0 002-2V5a2 2 0 00-2-2H6a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-        </div>
-        <div class="form-section-content w-full">
-          <div class="form-section-title">Status & Persetujuan</div>
-          <div class="grid grid-cols-1 gap-x-8">
-            {% for field in form %}
-              {% if field.name == "status" %}
-                <div class="input-group">
-                  <label class="input-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                  {{ field.as_widget }}
-                  {% for error in field.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            {% endfor %}
-            <!-- Checkbox Persetujuan -->
-            {% for field in form %}
-              {% if field.name == "setuju" %}
-                <label class="inline-flex items-center gap-2 mt-2 ml-1">
-                  {{ field.as_widget }}
-                  <span class="text-sm text-gray-600">{{ field.label }}</span>
-                </label>
+              {# Error "setuju" hanya di step 5 #}
+              {% if field.name != "setuju" or step == 5 %}
                 {% for error in field.errors %}
-                  <div class="text-danger">{{ error }}</div>
+                  <li><strong>{{ field.label }}:</strong> {{ error }}</li>
                 {% endfor %}
               {% endif %}
             {% endfor %}
-          </div>
+            {% if step == 5 %}
+              {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            {% endif %}
+          </ul>
         </div>
-      </div>
-
-      <button type="submit" class="btn-save w-full mt-1 py-3 text-white font-semibold text-lg tracking-wide shadow-lg hover:scale-[1.01] transition-all">Simpan Dokumen</button>
-    </form>
-
-    <div class="mt-7 text-center">
-      <a href="{% url 'daftar_file' %}" class="back-link">← Kembali ke Daftar Dokumen</a>
+      {% endif %}
+      <form id="wizard-form" method="post" enctype="multipart/form-data"
+            class="bg-white border border-gray-100 rounded-xl shadow-md px-4 py-6 sm:px-8 md:px-10 md:py-7 w-full max-w-3xl"
+            autocomplete="off">
+        {% csrf_token %}
+        <input type="hidden" name="step" value="{{ step }}">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+          {% for field in form %}
+            <div>
+              {% if step == 5 and field.name == "setuju" %}
+                <div class="flex items-center mt-2 mb-1">
+                  {{ field|add_class:"wizard-checkbox" }}
+                  <label for="{{ field.id_for_label }}" class="wizard-form-label mb-0 cursor-pointer" style="margin-bottom:0;">
+                    {{ field.label }}
+                  </label>
+                </div>
+                {% if field.errors %}
+                  <div class="text-xs text-red-500 mt-1">
+                    {% for error in field.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              {% elif field.name != "setuju" %}
+                <label class="wizard-form-label">{{ field.label }}</label>
+                {% if field.widget.input_type == "select" %}
+                  {{ field|add_class:"select-modern" }}
+                {% elif field.widget.input_type == "file" %}
+                  {{ field|add_class:"input-modern" }}
+                {% else %}
+                  {{ field|add_class:"input-modern" }}
+                {% endif %}
+                {% if field.help_text %}
+                  <div class="text-xs text-gray-400 mt-1">{{ field.help_text }}</div>
+                {% endif %}
+                {% if field.errors %}
+                  <div class="text-xs text-red-500 mt-1">
+                    {% for error in field.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+        {% if step == 4 %}
+        <div class="flex flex-col md:flex-row gap-3 mt-7">
+          <div class="flex-1 flex items-center text-gray-500 text-sm">Upload file scan & dokumen asli di sini</div>
+        </div>
+        {% endif %}
+      </form>
     </div>
-  </div>
+  </section>
 </div>
+{% endblock %}
+
+{% block extra_body %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const form = document.getElementById("wizard-form");
+  if (form && Number('{{ step }}') === 5) {
+    form.addEventListener('submit', function(e) {
+      const setujuToggle = document.querySelector('input[name="setuju"]');
+      if (setujuToggle && !setujuToggle.checked) {
+        e.preventDefault();
+        Swal.fire({
+          icon: 'warning',
+          title: 'Persetujuan wajib diaktifkan',
+          text: 'Silakan aktifkan kotak ceklis untuk menyetujui data dokumen.',
+          confirmButtonColor: '#2563eb'
+        });
+      }
+    });
+  }
+});
+</script>
 {% endblock %}
